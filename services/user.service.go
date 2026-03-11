@@ -11,7 +11,9 @@ import (
 
 type UserService interface {
 	Register(user *models.User) error
-	Login(email,password string) (*models.User, error)
+	Login(email, password string) (*models.User, error)
+	GetByID(id uint) (*models.User, error)
+	GetByPublicID(id string) (*models.User, error)
 }
 
 type userService struct {
@@ -43,16 +45,24 @@ func (s *userService) Register(user *models.User) error {
 	return s.repo.Create(user)
 }
 
-func (s *userService) Login(email,password string) (*models.User, error){
+func (s *userService) Login(email, password string) (*models.User, error) {
 	// Cek email terdaftar
 	user, err := s.repo.FindByEmail(email)
 	if err != nil {
 		return nil, errors.New("Invalide Credential")
 	}
 
-	 if !utils.CheckPasswordHash(password, user.Password){
+	if !utils.CheckPasswordHash(password, user.Password) {
 		return nil, errors.New("Invalide Credential")
-	 }
+	}
 
-	 return user, nil
+	return user, nil
+}
+
+func (s *userService) GetByID(id uint) (*models.User, error) {
+	return s.repo.FindByID(id)
+}
+
+func (s *userService) GetByPublicID(id string) (*models.User, error) {
+	return s.repo.FindByPublicID(id)
 }

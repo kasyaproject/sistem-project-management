@@ -31,7 +31,7 @@ func (c *UserController) Register(ctx *fiber.Ctx) error {
 		return utils.BadRequest(ctx, "Gagal Registrasi", err.Error())
 	}
 
-	// Take out Credential data user (password, internalId)
+	// Take out Credential data user (password, internalId) sesuai dengan struct UserResponse di models user
 	var userResponse models.UserResponse
 	_ = copier.Copy(&userResponse, &user)
 
@@ -61,7 +61,7 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 	token, _ := utils.GenerateToken(user.InternalID, user.Role, user.Email, user.PublicID)
 	refreshToken, _ := utils.GenerateRefreshToken(user.InternalID)
 
-	// Take out Credential data user (password, internalId)
+	// Take out Credential data user (password, internalId) sesuai dengan struct UserResponse di models user
 	var userResponse models.UserResponse
 	_ = copier.Copy(&userResponse, &user)
 
@@ -70,4 +70,24 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 		"refresh_token": refreshToken,
 		"user":          userResponse,
 	})
+}
+
+func (c *UserController) GetUser(ctx *fiber.Ctx) error {
+	id := ctx.Params("id")
+
+	user, err := c.service.GetByPublicID(id)
+
+	if err != nil {
+		return utils.NotFound(ctx, "Data not found", err.Error())
+	}
+
+	// Take out Credential data user (password, internalId) sesuai dengan struct UserResponse di models user
+	var userResponse models.UserResponse
+	err = copier.Copy(&userResponse, &user)
+
+	if err != nil {
+		return utils.BadRequest(ctx, "Internal server Error", err.Error())
+	}
+
+	return utils.Success(ctx, "Get Data Successfull", userResponse)
 }
