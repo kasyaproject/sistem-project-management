@@ -1,6 +1,9 @@
 package controllers
 
 import (
+	"math"
+	"strconv"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/jinzhu/copier"
 	"github.com/kasyaproject/sistem-project-management/models"
@@ -72,6 +75,7 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 	})
 }
 
+// Get myprofile Controller
 func (c *UserController) GetUser(ctx *fiber.Ctx) error {
 	id := ctx.Params("id")
 
@@ -90,4 +94,40 @@ func (c *UserController) GetUser(ctx *fiber.Ctx) error {
 	}
 
 	return utils.Success(ctx, "Get Data Successfull", userResponse)
+}
+
+// Find All user with pagination and params
+func (c *UserController) FindAllUser(ctx *fiber.Ctx) error {
+	page, _ := strconv.Atoi(ctx.Query("page", "1"))
+	limit, _ := strconv.Atoi(ctx.Query("limit", "10"))
+	offset := (page - 1) * limit
+
+	filter := ctx.Query("filter", "")
+	sort := ctx.Query("sort", "")
+
+	users, total, err := c.service.FindAllUser(filter, sort, limit, offset)
+	if err != nil {
+		return utils.BadRequest(ctx, "Gagal mengambil data", err.Error())
+	}
+
+	// Take out Credential data user (password, internalId) sesuai dengan struct UserResponse di models user
+	var userResponse []models.UserResponse
+	_ = copier.Copy(&userResponse, &users)
+
+	// buat output data untuk pagination kedalam response
+	meta := utils.PaginationMeta{
+		Page:      page,
+		Limit:     limit,
+		Total:     int(total),
+		TotalPage: int(math.Ceil(float64(total) / float64(limit))),
+
+		Filter: filter,
+		Sort:   sort,
+	}
+
+	if total == 0 {
+		return utils.NotFoundPagination(ctx, "Data pengguna tidak ditemukan", userResponse, meta)
+	}
+
+	return utils.SuccessPagination(ctx, "Data Berhasil Diambil", userResponse, meta)
 }
