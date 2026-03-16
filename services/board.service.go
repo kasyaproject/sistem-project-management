@@ -12,21 +12,25 @@ type BoardService interface {
 	Create(board *models.Board) error
 	GetByPublicID(publicID string) (*models.Board, error)
 	Update(board *models.Board) error
+	AddMembers(boardPublicID string, userPublicIDs []string) error
 }
 
 // Ambil struct dari repository
 type boardService struct {
-	boardRepo repositories.BoardRepository
-	userRepo  repositories.UserRepository
+	boardRepo       repositories.BoardRepository
+	userRepo        repositories.UserRepository
+	boardMemberRepo repositories.BoardMemberRepository
 }
 
 func NewBoardService(
 	boardRepo repositories.BoardRepository,
 	userRepo repositories.UserRepository,
+	boardMemberRepo repositories.BoardMemberRepository,
 ) BoardService {
 	return &boardService{
 		boardRepo,
 		userRepo,
+		boardMemberRepo,
 	}
 }
 
@@ -49,4 +53,52 @@ func (s *boardService) GetByPublicID(publicID string) (*models.Board, error) {
 
 func (s *boardService) Update(board *models.Board) error {
 	return s.boardRepo.Update(board)
+}
+
+func (s *boardService) AddMembers(boardPublicID string, userPublicIDs []string) error {
+	board, err := s.boardRepo.FindByPublicID(boardPublicID) // Ambil data board
+	if err != nil {
+		return errors.New("board not found!")
+	}
+
+	// Ambil data internalID user
+	var userInternalIDs []uint                   // deklarasi variabel
+	for _, userPublicID := range userPublicIDs { // loop userPublicIDs
+		user, err := s.userRepo.FindByPublicID(userPublicID) // Cari user berdasarkan publicID
+
+		// Jika user tidak ditemukan
+		if err != nil {
+			return errors.New("user not found: " + userPublicID)
+		}
+
+		// Tambahkan internalID user ke variabel userInternalID
+		userInternalIDs = append(userInternalIDs, uint(user.InternalID))
+	}
+
+	// Ambil data member di board
+	existingMembers, err := s.boardMemberRepo.GetMembers(string(board.PublicID.String()))
+	if err != nil {
+		return errors.New("board not found!")
+	}
+
+	// Buat map untuk menyimpan internalID member
+	memberMap := make(map[uint]bool)
+	for _, member := range existingMembers {
+		memberMap[uint(member.InternalID)] = true // memberMap[internalID] = true
+	}
+
+	// Tambahkan member baru bukan yang sudah member di board
+	var newMemberIDs []uint
+	for _, userID := range userInternalIDs {
+		if !memberMap[userID] { // Jika memberMap[internalID] tidak ada
+			newMemberIDs = append(newMemberIDs, userID) // Tambahkan memberID ke variabel newMemberIDs
+		}
+	}
+
+	// Jika variabel newMemberIDs masih kosong
+	if len(newMemberIDs) == 0 {
+		return nil
+	}
+
+	return s.boardRepo.AddMember(uint(board.InternalID), newMemberIDs)
 }

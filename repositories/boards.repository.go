@@ -1,6 +1,8 @@
 package repositories
 
 import (
+	"time"
+
 	"github.com/kasyaproject/sistem-project-management/config"
 	"github.com/kasyaproject/sistem-project-management/models"
 )
@@ -9,6 +11,7 @@ type BoardRepository interface {
 	Create(board *models.Board) error
 	FindByPublicID(publicID string) (*models.Board, error)
 	Update(board *models.Board) error
+	AddMember(boardID uint, userIDs []uint) error
 }
 
 type boardRepository struct {
@@ -36,4 +39,25 @@ func (r boardRepository) Update(board *models.Board) error {
 		"description": board.Description,
 		"due_date":    board.DueDate,
 	}).Error
+}
+
+func (r boardRepository) AddMember(boardID uint, userIDs []uint) error {
+	// Check if userIDs is empty
+	if len(userIDs) == 0 {
+		return nil
+	}
+
+	now := time.Now()                 // ambil waktu sekarang
+	var members []models.BoardMembers // deklarasi variabel members
+
+	// loop userIDs dan tambahkan data ke variabel members
+	for _, userID := range userIDs {
+		members = append(members, models.BoardMembers{ // tambahkan data ke variabel members
+			BoardID:  int64(boardID),
+			UserID:   int64(userID),
+			JoinedAt: now,
+		})
+	}
+
+	return config.DB.Create(&members).Error
 }
