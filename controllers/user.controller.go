@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/jinzhu/copier"
 	"github.com/kasyaproject/sistem-project-management/models"
 	"github.com/kasyaproject/sistem-project-management/services"
@@ -130,4 +131,49 @@ func (c *UserController) FindAllUser(ctx *fiber.Ctx) error {
 	}
 
 	return utils.SuccessPagination(ctx, "Data Berhasil Diambil", userResponse, meta)
+}
+
+func (c *UserController) UpdateUser(ctx *fiber.Ctx) error {
+	id := ctx.Params("id")
+	publicID, err := uuid.Parse(id)
+	if err != nil {
+		return utils.BadRequest(ctx, "Invalid ID Format", err.Error())
+	}
+
+	// Struct data user dan menyeseuaikan body dengan struct
+	var user models.User
+	if err := ctx.BodyParser(&user); err != nil {
+		return utils.BadRequest(ctx, "Gagal Parsing data", err.Error())
+	}
+
+	// Update user
+	user.PublicID = publicID
+	if err := c.service.Update(&user); err != nil {
+		return utils.BadRequest(ctx, "Gagal Update data", err.Error())
+	}
+
+	// Ambil data user yang sudah di update
+	userUpdated, err := c.service.GetByPublicID(id)
+	if err != nil {
+		return utils.InternalServerError(ctx, "Gagal Ambil data", err.Error())
+	}
+
+	// Take out Credential data user (password, internalId) sesuai dengan struct UserResponse di models user
+	var userResponse models.UserResponse
+	err = copier.Copy(&userResponse, &userUpdated)
+	if err != nil {
+		return utils.InternalServerError(ctx, "Gagal Parsing data response", err.Error())
+	}
+
+	// return response
+	return utils.Success(ctx, "Data Berhasil Diupdate", userResponse)
+}
+
+func (c *UserController) DeleteUser(ctx *fiber.Ctx) error {
+	id, _ := strconv.Atoi(ctx.Params("id"))
+	if err := c.service.Delete(uint(id)); err != nil {
+		return utils.InternalServerError(ctx, "Gagal Delete data", err.Error())
+	}
+
+	return utils.Success(ctx, "Data Berhasil Dihapus", nil)
 }
