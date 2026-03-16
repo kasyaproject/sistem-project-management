@@ -31,7 +31,7 @@ func Setup(app *fiber.App, uc *controllers.UserController) {
 	}))
 
 	// Route need jwt token
-	userGroup := api.Group("/user")
+	userGroup := api.Group("/users")
 	userGroup.Get("/page", uc.FindAllUser)
 	userGroup.Get("/:id", uc.GetUser) // "/api/v1/user/:id"
 }

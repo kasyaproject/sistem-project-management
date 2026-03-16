@@ -48,7 +48,7 @@ func LoadEnv() {
 
 		JWTSecret:       getEnv("JWT_SECRET", ""),
 		JWTRefreshToken: getEnv("REFRESH_TOKEN_EXPIRES_IN", "24h"),
-		JWTExpire:       getEnv("JWT_EXPIRES_IN", "1h"),
+		JWTExpire:       getEnv("JWT_EXPIRES_IN", "2h"),
 	}
 }
 

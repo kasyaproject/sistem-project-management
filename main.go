@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/kasyaproject/sistem-project-management/config"
@@ -18,6 +20,9 @@ func main() {
 	config.ConncetDB()
 	port := config.AppConfig.AppPort
 
+	duration, _ := time.ParseDuration(config.AppConfig.JWTExpire)
+	fmt.Println("JWT Expire:", duration)
+	fmt.Println(time.Now())
 	// Jalankan seeder
 	seed.SeedAdmin()
 
