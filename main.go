@@ -1,9 +1,7 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/kasyaproject/sistem-project-management/config"
@@ -15,24 +13,27 @@ import (
 )
 
 func main() {
-	//
+	// Load env & Connect DB
 	config.LoadEnv()
 	config.ConncetDB()
 	port := config.AppConfig.AppPort
 
-	duration, _ := time.ParseDuration(config.AppConfig.JWTExpire)
-	fmt.Println("JWT Expire:", duration)
-	fmt.Println(time.Now())
 	// Jalankan seeder
 	seed.SeedAdmin()
 
 	app := fiber.New()
 
+	// User Controller
 	userRepo := repositories.NewUserRepository()
 	userService := services.NewUserService(userRepo)
 	userController := controllers.NewUserController(userService)
 
-	routes.Setup(app, userController)
+	// Board Controller
+	boardRepo := repositories.NewBoardRepository()
+	boardService := services.NewBoardService(boardRepo, userRepo)
+	boardController := controllers.NewBoardController(boardService)
+
+	routes.Setup(app, userController, boardController)
 
 	log.Println("Server is running on port : ", port)
 	log.Fatal(app.Listen(":" + port))

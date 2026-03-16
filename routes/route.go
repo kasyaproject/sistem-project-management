@@ -11,7 +11,11 @@ import (
 	"github.com/kasyaproject/sistem-project-management/utils"
 )
 
-func Setup(app *fiber.App, uc *controllers.UserController) {
+func Setup(
+	app *fiber.App,
+	uc *controllers.UserController,
+	bc *controllers.BoardController,
+) {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -31,9 +35,14 @@ func Setup(app *fiber.App, uc *controllers.UserController) {
 	}))
 
 	// Route need jwt token
+	// User Route
 	userGroup := api.Group("/users")
 	userGroup.Get("/page", uc.FindAllUser)
 	userGroup.Get("/:id", uc.GetUser) // "/api/v1/users/:id"
 	userGroup.Put("/:id", uc.UpdateUser)
 	userGroup.Delete("/:id", uc.DeleteUser)
+
+	// Board Route
+	boardGroup := api.Group("/boards")
+	boardGroup.Post("/", bc.CreateBoard)
 }
