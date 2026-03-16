@@ -10,6 +10,8 @@ import (
 
 type BoardService interface {
 	Create(board *models.Board) error
+	GetByPublicID(publicID string) (*models.Board, error)
+	Update(board *models.Board) error
 }
 
 // Ambil struct dari repository
@@ -39,4 +41,12 @@ func (s *boardService) Create(board *models.Board) error {
 	board.OwnerID = user.InternalID // set owner id sesuai dengan user yang sedang login
 
 	return s.boardRepo.Create(board)
+}
+
+func (s *boardService) GetByPublicID(publicID string) (*models.Board, error) {
+	return s.boardRepo.FindByPublicID(publicID)
+}
+
+func (s *boardService) Update(board *models.Board) error {
+	return s.boardRepo.Update(board)
 }

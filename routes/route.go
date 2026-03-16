@@ -45,4 +45,5 @@ func Setup(
 	// Board Route
 	boardGroup := api.Group("/boards")
 	boardGroup.Post("/", bc.CreateBoard)
+	boardGroup.Put("/:id", bc.UpdateBoard)
 }
