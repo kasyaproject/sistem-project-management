@@ -12,6 +12,7 @@ type BoardRepository interface {
 	FindByPublicID(publicID string) (*models.Board, error)
 	Update(board *models.Board) error
 	AddMember(boardID uint, userIDs []uint) error
+	RemoveMember(boardID uint, userIDs []uint) error
 }
 
 type boardRepository struct {
@@ -21,11 +22,11 @@ func NewBoardRepository() BoardRepository {
 	return &boardRepository{}
 }
 
-func (r boardRepository) Create(board *models.Board) error {
+func (r *boardRepository) Create(board *models.Board) error {
 	return config.DB.Create(board).Error
 }
 
-func (r boardRepository) FindByPublicID(publicID string) (*models.Board, error) {
+func (r *boardRepository) FindByPublicID(publicID string) (*models.Board, error) {
 	var board models.Board
 
 	err := config.DB.Where("public_id = ?", publicID).First(&board).Error
@@ -33,7 +34,7 @@ func (r boardRepository) FindByPublicID(publicID string) (*models.Board, error) 
 	return &board, err
 }
 
-func (r boardRepository) Update(board *models.Board) error {
+func (r *boardRepository) Update(board *models.Board) error {
 	return config.DB.Model(&models.Board{}).Where("public_id = ?", board.PublicID).Updates(map[string]interface{}{
 		"title":       board.Title,
 		"description": board.Description,
@@ -41,7 +42,7 @@ func (r boardRepository) Update(board *models.Board) error {
 	}).Error
 }
 
-func (r boardRepository) AddMember(boardID uint, userIDs []uint) error {
+func (r *boardRepository) AddMember(boardID uint, userIDs []uint) error {
 	// Check if userIDs is empty
 	if len(userIDs) == 0 {
 		return nil
@@ -60,4 +61,15 @@ func (r boardRepository) AddMember(boardID uint, userIDs []uint) error {
 	}
 
 	return config.DB.Create(&members).Error
+}
+
+func (r *boardRepository) RemoveMember(boardID uint, userIDs []uint) error {
+	// Check if userIDs is empty
+	if len(userIDs) == 0 {
+		return nil
+	}
+
+	// Hapus data member berdasarkan boardID dan userIDs
+	return config.DB.
+		Where("board_internal_id = ? AND user_internal_id IN (?)", boardID, userIDs).Delete(&models.BoardMembers{}).Error
 }
