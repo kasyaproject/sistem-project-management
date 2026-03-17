@@ -1,6 +1,9 @@
 package controllers
 
 import (
+	"math"
+	"strconv"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
@@ -45,6 +48,39 @@ func (c *BoardController) CreateBoard(ctx *fiber.Ctx) error {
 	}
 
 	return utils.Success(ctx, "Create board success", board)
+}
+
+func (c *BoardController) GetMyBoardPaginate(ctx *fiber.Ctx) error {
+	// Ambil data user yang sedang login
+	user := ctx.Locals("user").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+	userID := claims["pub_id"].(string)
+
+	// Ambil query parameter page, limit, offset, filter, sort
+	page, _ := strconv.Atoi(ctx.Query("page", "1"))
+	limit, _ := strconv.Atoi(ctx.Query("limit", "10"))
+	offset := (page - 1) * limit
+	filter := ctx.Query("filter", "")
+	sort := ctx.Query("sort", "")
+
+	// Get all board by user
+	board, total, err := c.service.GetAllByUserPaginate(userID, filter, sort, limit, offset)
+	if err != nil {
+		return utils.InternalServerError(ctx, "Gagal mengambil data", err.Error())
+	}
+
+	// buat output data untuk pagination kedalam response
+	meta := utils.PaginationMeta{
+		Page:      page,
+		Limit:     limit,
+		Total:     int(total),
+		TotalPage: int(math.Ceil(float64(total) / float64(limit))),
+
+		Filter: filter,
+		Sort:   sort,
+	}
+
+	return utils.SuccessPagination(ctx, "Get all board success", board, meta)
 }
 
 func (c *BoardController) UpdateBoard(ctx *fiber.Ctx) error {
