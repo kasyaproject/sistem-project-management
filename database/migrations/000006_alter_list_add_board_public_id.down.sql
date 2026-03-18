@@ -1,0 +1,1 @@
+ALTER TABLE list DROP COLUMN IF EXIST board_public_id
