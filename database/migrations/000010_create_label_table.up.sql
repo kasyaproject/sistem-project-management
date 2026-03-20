@@ -1,0 +1,9 @@
+CREATE TABLE labels(
+    internal_id BIGSERIAL PRIMARY KEY,
+    public_id UUID NOT NULL DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    color VARCHAR(50) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT labels_public_id_unique UNIQUE (public_id)
+)
