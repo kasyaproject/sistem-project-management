@@ -107,3 +107,35 @@ func (c *ListController) DeleteList(ctx *fiber.Ctx) error {
 
 	return utils.Success(ctx, "List berhasil dihapus", nil)
 }
+
+func (c *ListController) UpdateListPosition(ctx *fiber.Ctx) error {
+	boardID := ctx.Params("board_id")
+	if _, err := uuid.Parse(boardID); err != nil {
+		return utils.BadRequest(ctx, "ID tidak valid", err.Error())
+	}
+
+	var positionUUID []uuid.UUID
+	if err := ctx.BodyParser(&positionUUID); err != nil {
+		// jika gagal, coba parsing sebagai array of string
+		var positionString []string
+		if err := ctx.BodyParser(&positionString); err != nil {
+			return utils.BadRequest(ctx, "Gagal parsing data", err.Error())
+		}
+
+		// konversi string ke UUID
+		for _, s := range positionString {
+			u, err := uuid.Parse(s)
+			if err != nil {
+				return utils.BadRequest(ctx, "Invalide position format", err.Error())
+			}
+
+			positionUUID = append(positionUUID, u)
+		}
+	}
+
+	if err := c.service.UpdatePosition(boardID, positionUUID); err != nil {
+		return utils.InternalServerError(ctx, "Gagal update list position", err.Error())
+	}
+
+	return utils.Success(ctx, "Posisi list berhasil diperbaharui", nil)
+}
